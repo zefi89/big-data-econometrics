@@ -153,9 +153,9 @@ for (ti in c(0,1,2,3,4,5,6)){
     X[labels] <- log(X[labels]) * 100
   }
   # (1-L) log * 100
-  if (ti == 5) {
-    X[labels] <- 100 * (log(X[labels]) - log(data[13:(NROW(data)-1),labels]))
-  }
+  #if (ti == 5) {
+    #X[labels] <- 100 * (log(X[labels]) - log(data[13:(NROW(data)-1),labels]))
+  #}
   # (1-L) * (1-L^{12}) * log * 100 (Prices)
   if (ti == 6) {
     X[labels] <- 100 * (log(X[labels]) - log(data[2:(NROW(data)-12),labels]))
@@ -180,11 +180,12 @@ x <- X[j0:start_sample,] # The available data at the beginning of the out of sam
 
 # Handle outliers for all panels except the two we want to predict
 for (panel in setdiff(setdiff(names(x), nn), "Date")){
-    x[panel] <- outliers(x[panel])
+    x[panel] <- outliers(as.numeric(unlist(x[panel])))
 }
 
 ############
 # Regression
 ############
 
-ridge.mod <- glmnetPred(x[nn[1]], x, 1, 1, 2, 0)
+ridge.mod <- glmnetPred(x[nn[1]], x[,2:NCOL(x)], 0, 1, 1, 0)
+print(ridge.mod)
