@@ -31,16 +31,16 @@
 # nu: selected Penalization Parameter
 # b : Regression coefficients (on standardized data)
 
-source("GlmnetWrapper.R")
+source("Predictors.R")
 
 setRidge <- function(y,x,p,INfit,h) {
 
 
-    nu_min <- 0
-    nu_max <- 10000
-    IN_max <- 1e+32
-    IN_min <- 0
-    IN_avg <- 1e+32
+    nu_min = 0
+    nu_max = 10000
+    IN_max = 1e+32
+    IN_min = 0
+    IN_avg = 1e+32
 
     while (abs(IN_avg-INfit)>1e-7) {
 

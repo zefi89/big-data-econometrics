@@ -73,9 +73,9 @@ message('-----------------------------------------------------------------------
 library(readxl)
 
 source("Outliers.R")
-#source("SetLasso.R")
+source("SetLasso.R")
 source("SetRidge.R")
-source("GlmnetWrapper.R")
+source("Predictors.R")
 
 ############
 # Parameters
@@ -205,7 +205,18 @@ for (k in 1:length(nn)) {
     }
 }
 
-print(lambda_ridge)
+K = c(1, 2, 3, 5, 10, 25, 50, 60, 75, 100)
+
+lambda_lasso = matrix(, nrow = length(K), ncol = 3)
+lambda_lasso[,1] = K
+colnames(lambda_ridge) <- c("K", nn[1], nn[2])
+
+for (k in 1:length(nn)) {
+    for (i in 1:length(K)) {
+        fit <- setLasso(x[nn[k]], x[,2:NCOL(x)], p=0, K=K[i], h=HH) # Lasso
+        lambda_lasso[i,k+1] = fit$lambda
+    }
+}
 
 #################################################
 # Performs the out-of-sample forecasting exercise
@@ -226,13 +237,40 @@ colnames(ridge) <- c(
                      paste(nn[1], "_ridge_IN0p9", sep=""), paste(nn[2], "_ridge_IN0p9", sep="")
                      )
 
+lasso = matrix(, nrow = TT, ncol = 2 * length(K))
+colnames(lasso) <- c(
+                     paste(nn[1], "_lasso_K1", sep=""), paste(nn[2], "_lasso_K1", sep=""),
+                     paste(nn[1], "_lasso_K2", sep=""), paste(nn[2], "_lasso_K2", sep=""),
+                     paste(nn[1], "_lasso_K3", sep=""), paste(nn[2], "_lasso_K3", sep=""),
+                     paste(nn[1], "_lasso_K5", sep=""), paste(nn[2], "_lasso_K5", sep=""),
+                     paste(nn[1], "_lasso_K10", sep=""), paste(nn[2], "_lasso_K10", sep=""),
+                     paste(nn[1], "_lasso_K25", sep=""), paste(nn[2], "_lasso_K25", sep=""),
+                     paste(nn[1], "_lasso_K50", sep=""), paste(nn[2], "_lasso_K50", sep=""),
+                     paste(nn[1], "_lasso_K60", sep=""), paste(nn[2], "_lasso_K60", sep=""),
+                     paste(nn[1], "_lasso_K75", sep=""), paste(nn[2], "_lasso_K75", sep=""),
+                     paste(nn[1], "_lasso_K100", sep=""), paste(nn[2], "_lasso_K100", sep="")
+                     )
+
+pc = matrix(, nrow = TT, ncol = 2 * length(K))
+colnames(pc) <- c(
+                     paste(nn[1], "_pc_r1", sep=""), paste(nn[2], "_pc_r1", sep=""),
+                     paste(nn[1], "_pc_r2", sep=""), paste(nn[2], "_pc_r2", sep=""),
+                     paste(nn[1], "_pc_r3", sep=""), paste(nn[2], "_pc_r3", sep=""),
+                     paste(nn[1], "_pc_r5", sep=""), paste(nn[2], "_pc_r5", sep=""),
+                     paste(nn[1], "_pc_r10", sep=""), paste(nn[2], "_pc_r10", sep=""),
+                     paste(nn[1], "_pc_r25", sep=""), paste(nn[2], "_pc_r25", sep=""),
+                     paste(nn[1], "_pc_r50", sep=""), paste(nn[2], "_pc_r50", sep=""),
+                     paste(nn[1], "_pc_r60", sep=""), paste(nn[2], "_pc_r60", sep=""),
+                     paste(nn[1], "_pc_r75", sep=""), paste(nn[2], "_pc_r75", sep=""),
+                     paste(nn[1], "_pc_r100", sep=""), paste(nn[2], "_pc_r100", sep="")
+                     )
+
 naive = matrix(, nrow = TT, ncol = 2)
 colnames(naive) <- c(paste(nn[1], "_rw", sep=""), paste(nn[2], "_rw", sep=""))
 true = matrix(, nrow = TT, ncol = 2)
 colnames(true) <- c(paste(nn[1], "_true", sep=""), paste(nn[2], "_true", sep=""))
 
 for (j in start_sample:(TT-HH)) {
-#for (j in start_sample:(start_sample+10)) {
 
     # Displays the dates at the beginning of each year
     if (months[j] == 1) {
@@ -262,6 +300,18 @@ for (j in start_sample:(TT-HH)) {
             ridge[j+HH,k+2*(i-1)] = fit$pred * const
         }
 
+        # The lasso forecasts
+        for (i in 1:length(K)) {
+            fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_lasso[i,k+1], h=HH, alpha=1)
+            lasso[j+HH,k+2*(i-1)] = fit$pred * const
+        }
+
+        ## The PC forecasts (the r in PC are going over the same values as the K in lasso)
+        #for (i in 1:length(K)) {
+            #pred <- pcPred(x[nn[k]], x[,2:NCOL(x)], p=0, r=K[i], h=HH)
+            #pc[j+HH,k+2*(i-1)] = pred * const
+        #}
+
         # The random walk forecast
         naive[j+HH,k] = rwPred(x[nn[k]], h=HH) * const
 
@@ -276,7 +326,8 @@ for (j in start_sample:(TT-HH)) {
 # Save true values and forecasts to CSV
 #######################################
 
-data <- cbind(cbind(true, naive), ridge)[(start_sample+HH):NROW(dataset),]
+data <- cbind(cbind(cbind(true, naive), ridge), lasso)[(start_sample+HH):NROW(dataset),]
+#data <- cbind(cbind(cbind(cbind(true, naive), ridge), lasso), pc)[(start_sample+HH):NROW(dataset),]
 dates <- X[(start_sample+HH):NROW(dataset),1]
 
 datawithdates <- cbind(dates, data)
