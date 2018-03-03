@@ -164,6 +164,11 @@ for (ti in c(0,1,2,3,4,5,6)){
   }
 }
 
+# The size of the panel
+TT = NROW(X)
+NN = NCOL(X) - 1
+
+
 ################################################
 # Getting subsamples for out-of-samples exercies
 ################################################
@@ -183,19 +188,99 @@ for (panel in setdiff(setdiff(names(x), nn), "Date")){
     x[panel] <- outliers(as.numeric(unlist(x[panel])))
 }
 
-############
-# Regression
-############
+#######################
+# Find tuning parameter
+#######################
 
-fit <- glmnetPred(x[nn[1]], x[,2:NCOL(x)], p=0, lambda=64, h=1, alpha=0)
-print(fit$mse)
+IN = c(0.1, 0.2, 0.3 ,0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 
-#print(fit$mse)
-#print(fit$b)
-#print(fit$pred)
-#IN = c(0.1, 0.2, 0.3 ,0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+lambda_ridge = matrix(, nrow = length(IN), ncol = 3)
+lambda_ridge[,1] = IN
+colnames(lambda_ridge) <- c("IN", nn[1], nn[2])
 
-#for (i in IN) {
-    #fit <- setRidge(x[nn[1]], x[,2:NCOL(x)], p=0, INfit=i, h=12, alpha=0) # Ridge
-    #print(fit$lambda)
-#}
+for (k in 1:length(nn)) {
+    for (i in 1:length(IN)) {
+        fit <- setRidge(x[nn[k]], x[,2:NCOL(x)], p=0, INfit=IN[i], h=HH) # Ridge
+        lambda_ridge[i,k+1] = fit$lambda
+    }
+}
+
+print(lambda_ridge)
+
+#################################################
+# Performs the out-of-sample forecasting exercise
+#################################################
+
+months <- as.numeric(format(as.Date(X$Date), "%m"))
+
+ridge = matrix(, nrow = TT, ncol = 2 * length(IN))
+colnames(ridge) <- c(
+                     paste(nn[1], "_ridge_IN0p1", sep=""), paste(nn[2], "_ridge_IN0p1", sep=""),
+                     paste(nn[1], "_ridge_IN0p2", sep=""), paste(nn[2], "_ridge_IN0p2", sep=""),
+                     paste(nn[1], "_ridge_IN0p3", sep=""), paste(nn[2], "_ridge_IN0p3", sep=""),
+                     paste(nn[1], "_ridge_IN0p4", sep=""), paste(nn[2], "_ridge_IN0p4", sep=""),
+                     paste(nn[1], "_ridge_IN0p5", sep=""), paste(nn[2], "_ridge_IN0p5", sep=""),
+                     paste(nn[1], "_ridge_IN0p6", sep=""), paste(nn[2], "_ridge_IN0p6", sep=""),
+                     paste(nn[1], "_ridge_IN0p7", sep=""), paste(nn[2], "_ridge_IN0p7", sep=""),
+                     paste(nn[1], "_ridge_IN0p8", sep=""), paste(nn[2], "_ridge_IN0p8", sep=""),
+                     paste(nn[1], "_ridge_IN0p9", sep=""), paste(nn[2], "_ridge_IN0p9", sep="")
+                     )
+
+naive = matrix(, nrow = TT, ncol = 2)
+colnames(naive) <- c(paste(nn[1], "_rw", sep=""), paste(nn[2], "_rw", sep=""))
+true = matrix(, nrow = TT, ncol = 2)
+colnames(true) <- c(paste(nn[1], "_true", sep=""), paste(nn[2], "_true", sep=""))
+
+for (j in start_sample:(TT-HH)) {
+#for (j in start_sample:(start_sample+10)) {
+
+    # Displays the dates at the beginning of each year
+    if (months[j] == 1) {
+        message('--------------')
+        message('now running')
+        message(X$Date[j])
+    }
+
+    # Define the beginning of the estimation sample
+
+    j0 <- j - Jwind + 1
+
+    x <- X[j0:j,] # The available data at each time point of the evaluation exercise
+
+    # Handle outliers for all panels except the two we want to predict
+    for (panel in setdiff(setdiff(names(x), nn), "Date")){
+        x[panel] <- outliers(as.numeric(unlist(x[panel])))
+    }
+
+    # Normalization constant
+    const = 12
+
+    for (k in 1:length(nn)) {
+        # Computed the ridge forecasts
+        for (i in 1:length(IN)) {
+            fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_ridge[i,k+1], h=HH, alpha=0)
+            ridge[j+HH,k+2*(i-1)] = fit$pred * const
+        }
+
+        # The random walk forecast
+        naive[j+HH,k] = rwPred(x[nn[k]], h=HH) * const
+
+        # Compute the true value to be predicted
+        temp = as.numeric(colMeans(X[(j+1):(j+HH),nn[k]]))
+        true[j+HH,k] = temp*const
+    }
+
+}
+
+#######################################
+# Save true values and forecasts to CSV
+#######################################
+
+data <- cbind(cbind(true, naive), ridge)[(start_sample+HH):NROW(dataset),]
+dates <- X[(start_sample+HH):NROW(dataset),1]
+
+datawithdates <- cbind(dates, data)
+datawithdates$Date <- as.numeric(datawithdates$Date)
+
+save(dates, data, dates,file="OutSample.Rda")
+write.csv(datawithdates, "OutSample.csv", row.names=FALSE)

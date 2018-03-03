@@ -33,7 +33,7 @@
 
 source("GlmnetWrapper.R")
 
-setRidge <- function(y,x,p,INfit,h,alpha) {
+setRidge <- function(y,x,p,INfit,h) {
 
 
     nu_min <- 0
@@ -46,7 +46,7 @@ setRidge <- function(y,x,p,INfit,h,alpha) {
 
         nu_avg <- (nu_min+nu_max)/2
 
-        fit <- glmnetPred(y, x, p, nu_avg, h, alpha)
+        fit <- glmnetPred(y, x, p, nu_avg, h, alpha=0)
 
         IN_avg = fit$mse
 

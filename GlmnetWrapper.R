@@ -20,6 +20,7 @@ glmnetPred <- function(y,x,p,lambda,h,alpha) {
     nc <- NCOL(X)
     nr <- NROW(X)
     XX <- scale(X, center = TRUE, scale = TRUE)/sqrt(nc*nr)
+    XX <- X
     # Regressors used for computing the regression coefficients
     Z <- XX[1:(NROW(XX)-h),]
 
@@ -48,7 +49,7 @@ glmnetPred <- function(y,x,p,lambda,h,alpha) {
     #intercept <- reg.coef[1]
 
     # Make the prediction
-    Ztest <- as.matrix(X[NROW(X),])
+    Ztest <- as.matrix(XX[NROW(XX),])
     pred <- predict(reg.mod, newx=Ztest)*sy+my
     #pred <- 0
 
@@ -61,4 +62,14 @@ glmnetPred <- function(y,x,p,lambda,h,alpha) {
 
     return(returnlist)
 
+}
+
+rwPred <- function(y,h) {
+
+    # Compute the dependent variable to be predicted
+    # Y = (y_{+1}+...+y_{+h})/h
+    Y = filter(rep(1,h)/h,1,unlist(y))
+    Y = Y[(h+1):length(Y)]
+
+    return(mean(Y))
 }

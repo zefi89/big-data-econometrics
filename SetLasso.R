@@ -31,37 +31,41 @@
 # nu: selected Penalization Parameter
 # b : Regression coefficients (on standardized data) 
 
-function [nu,b] = SET_lasso(y,x,p,K,h);
+source("GlmnetWrapper.R")
 
-nu_min = 0;
-nu_max = 2;
-K_max = 1e+32;
-K_min = 0;
-K_avg = 1e+32;
-max_iter = 30;
+setLasso <- function(y,x,p,K,h) {
 
-cont = 0;
+    nu_min = 0
+    nu_max = 2
+    K_max = 1e+32
+    K_min = 0
+    K_avg = 1e+32
+    max_iter = 30
 
-while K_min~=K_max & cont<max_iter
-    cont = cont + 1;
-    nu_avg = (nu_min+nu_max)/2;
-    [pred,b] = LASSO_pred(y,x,p,nu_avg,h);
-    K_avg = sum(b(:,end)~=0);
+    cont = 0
+
+    while (K_min~=K_max && cont<max_iter) {
+        cont = cont + 1
+        nu_avg = (nu_min+nu_max)/2
+
+        fit <- glmnetPred(y, x, p, nu_avg, h, alpha=1)
+        K_avg = sum(fit$b(:,end)~=0)
+            
+        if K_avg < K
+            nu_min = nu_min
+            nu_max = nu_avg
+        else
+            nu_min = nu_avg
+            nu_max = nu_max
+        end
         
-    if K_avg < K
-        nu_min = nu_min;
-        nu_max = nu_avg;
-    else
-        nu_min = nu_avg;
-        nu_max = nu_max;
-    end;
-    
-end;
+    }
 
+    if (cont>=max_iter ) {
+        message('warning: max iter reached vwhen setting the Lasso penalization')
+    }
 
-if cont>=max_iter
-    message('warning: max iter reached vwhen setting the Lasso penalization')
-end
+    nu = nu_avg;
+    b = b(:,end);
 
-nu = nu_avg;
-b = b(:,end);
+}
