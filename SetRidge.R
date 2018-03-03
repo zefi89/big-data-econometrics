@@ -31,35 +31,38 @@
 # nu: selected Penalization Parameter
 # b : Regression coefficients (on standardized data)
 
-library(glmnet)
+source("GlmnetWrapper.R")
 
-SET_ridge <- function(y,x,p,INfit,h) {
+setRidge <- function(y,x,p,INfit,h,alpha) {
+
 
     nu_min <- 0
-    nu_max <- 10
+    nu_max <- 10000
     IN_max <- 1e+32
     IN_min <- 0
     IN_avg <- 1e+32
 
-    while abs(IN_avg-INfit)>1e-7
+    while (abs(IN_avg-INfit)>1e-7) {
 
-        nu_avg = (nu_min+nu_max)/2;
+        nu_avg <- (nu_min+nu_max)/2
 
-        [pred,b,IN_avg] = RIDGE_pred(y,x,p,nu_avg,h);
+        fit <- glmnetPred(y, x, p, nu_avg, h, alpha)
 
-        if IN_avg > INfit
-            nu_min = nu_min;
-            nu_max = nu_avg;
-        else
-            nu_min = nu_avg;
-            nu_max = nu_max;
-        end;
+        IN_avg = fit$mse
 
-    end;
+        if (IN_avg > INfit) {
+            nu_min = nu_min
+            nu_max = nu_avg
+        }
+        else {
+            nu_min = nu_avg
+            nu_max = nu_max
+        }
+    }
 
-    nu = nu_avg;
-    b = b(:,end);
+    returnlist <- list(nu_avg, fit$b)
+    names(returnlist) <- c("lambda", "b")
 
-    return [nu,b]
+    return(returnlist)
 
 }

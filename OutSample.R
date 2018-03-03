@@ -74,7 +74,7 @@ library(readxl)
 
 source("Outliers.R")
 #source("SetLasso.R")
-#source("SetRidge.R")
+source("SetRidge.R")
 source("GlmnetWrapper.R")
 
 ############
@@ -153,9 +153,9 @@ for (ti in c(0,1,2,3,4,5,6)){
     X[labels] <- log(X[labels]) * 100
   }
   # (1-L) log * 100
-  #if (ti == 5) {
-    #X[labels] <- 100 * (log(X[labels]) - log(data[13:(NROW(data)-1),labels]))
-  #}
+  if (ti == 5) {
+    X[labels] <- 100 * (log(X[labels]) - log(data[13:(NROW(data)-1),labels]))
+  }
   # (1-L) * (1-L^{12}) * log * 100 (Prices)
   if (ti == 6) {
     X[labels] <- 100 * (log(X[labels]) - log(data[2:(NROW(data)-12),labels]))
@@ -187,5 +187,15 @@ for (panel in setdiff(setdiff(names(x), nn), "Date")){
 # Regression
 ############
 
-ridge.mod <- glmnetPred(x[nn[1]], x[,2:NCOL(x)], 0, 1, 1, 0)
-print(ridge.mod)
+fit <- glmnetPred(x[nn[1]], x[,2:NCOL(x)], p=0, lambda=64, h=1, alpha=0)
+print(fit$mse)
+
+#print(fit$mse)
+#print(fit$b)
+#print(fit$pred)
+#IN = c(0.1, 0.2, 0.3 ,0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+
+#for (i in IN) {
+    #fit <- setRidge(x[nn[1]], x[,2:NCOL(x)], p=0, INfit=i, h=12, alpha=0) # Ridge
+    #print(fit$lambda)
+#}

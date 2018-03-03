@@ -1,7 +1,7 @@
 require(glmnet)
 require(signal)
 
-glmnetPred <- function(y,x,p,nu,h,alpha) {
+glmnetPred <- function(y,x,p,lambda,h,alpha) {
 
     # Put togeteher predictors and their lags
     # X = [x x_{-1}... x_{-p}]
@@ -10,15 +10,18 @@ glmnetPred <- function(y,x,p,nu,h,alpha) {
         if (j == 0) {
             temp <- x[(p+1):NROW(x),]
         } else {
-            print(dim(x[(p+1-j):(NROW(x)-j),]))
             temp <- cbind(temp, x[(p+1-j):(NROW(x)-j),])
         }
     }
     X <- temp
     y <- y[(p+1):NROW(y),]
 
+    # Normalize the regressors to have |X|<1
+    nc <- NCOL(X)
+    nr <- NROW(X)
+    XX <- scale(X, center = TRUE, scale = TRUE)/sqrt(nc*nr)
     # Regressors used for computing the regression coefficients
-    Z <- X[1:(NROW(X)-h),]
+    Z <- XX[1:(NROW(XX)-h),]
 
     ## Massage the data a bit into the right format
     Z <- as.matrix(Z)
@@ -28,11 +31,34 @@ glmnetPred <- function(y,x,p,nu,h,alpha) {
     Y = filter(rep(1,h)/h,1,unlist(y))
     Y = Y[(h+1):length(Y)]
 
-    reg.mod <- glmnet(Z, Y, alpha=alpha, lambda=0.1)
+    # Standardize the dependent variable to have mean zero and unitary variance.
+    # (Mean and variance will be reattributed to the forecsats, see below)
+    my <- mean(Y)
+    sy <- sd(Y)
+    y_std <- (Y-my)/sy
 
-    return(reg.mod)
+    # Do the fit
+    #b <- solve(t(Z) %*% Z + lambda*diag(nc)) %*% t(Z) %*% y_std
+    reg.mod <- glmnet(Z, y_std, alpha=alpha, family='gaussian', lambda=lambda, intercept=FALSE)
+    #print(coef(reg.mod))
+
+    # Get the coefficients
+    reg.coef <- coef(reg.mod)
+    b <- reg.coef[2:NROW(reg.coef)]
+    #intercept <- reg.coef[1]
+
+    # Make the prediction
+    Ztest <- as.matrix(X[NROW(X),])
+    pred <- predict(reg.mod, newx=Ztest)*sy+my
+    #pred <- 0
+
+    # Get the MSE relative to the variance of Y
+    #mse = var(Y - ((Z %*% b) + intercept))/var(Y)
+    mse = var(y_std - (Z %*% b))
+
+    returnlist <- list(pred, b, mse)
+    names(returnlist) <- c("pred", "b", "mse")
+
+    return(returnlist)
 
 }
-
-
-#function [pred,b,MSE] =
