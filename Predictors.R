@@ -1,12 +1,11 @@
 require(glmnet)
 require(signal)
-require(pls)
 
 ############################
 # Lasso or ridge with glmnet
 ############################
 
-glmnetPred <- function(y,x,p,lambda,h,alpha) {
+glmnetPred <- function(y,x,p,lambda,h,alpha, cv=FALSE) {
 
     # Put togeteher predictors and their lags
     # X = [x x_{-1}... x_{-p}]
@@ -44,6 +43,10 @@ glmnetPred <- function(y,x,p,lambda,h,alpha) {
 
     # Do the fit
     #b <- solve(t(Z) %*% Z + lambda*diag(nc)) %*% t(Z) %*% y_std
+    if (cv) {
+        cvout <- cv.glmnet(Z, y_std)
+        lambda = cvout$lambda.min
+    }
     reg.mod <- glmnet(Z, y_std, alpha=alpha, family='gaussian', lambda=lambda, intercept=FALSE)
 
     # Get the coefficients
@@ -57,8 +60,8 @@ glmnetPred <- function(y,x,p,lambda,h,alpha) {
     # Get the MSE relative to the variance of Y
     mse = var(y_std - (Z %*% b))
 
-    returnlist <- list(pred, b, mse)
-    names(returnlist) <- c("pred", "b", "mse")
+    returnlist <- list(pred, b, mse, lambda)
+    names(returnlist) <- c("pred", "b", "mse", "lambda")
 
     return(returnlist)
 

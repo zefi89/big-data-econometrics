@@ -1,11 +1,11 @@
 all: OutSample.Rda
-	Rscript OutSamplSummary.R
+	R -e 'source("OutSamplSummary.R")'
 	sh corpPlots.sh
 	python makeTablesPretty.py
 	pdflatex report.tex
 
 OutSample.Rda:
-	Rscript OutSample.R
+	R -e 'source("OutSample.R")'
 
 clean:
 	rm -rf plots

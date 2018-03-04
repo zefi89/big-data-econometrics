@@ -126,9 +126,14 @@ for (panel in setdiff(setdiff(names(x), nn), "Date")){
 lambda_ridge = matrix(, nrow = length(IN), ncol = 3)
 lambda_ridge[,1] = IN
 colnames(lambda_ridge) <- c("IN", nn[1], nn[2])
+lambda_ridge_best <- c()
 
 for (k in 1:length(nn)) {
     for (i in 1:length(IN)) {
+
+        fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, alpha=0, cv=TRUE)
+        lambda_ridge_best[k] = fit$lambda
+
         fit <- setRidge(x[nn[k]], x[,2:NCOL(x)], p=0, INfit=IN[i], h=HH) # Ridge
         lambda_ridge[i,k+1] = fit$lambda
     }
@@ -136,10 +141,14 @@ for (k in 1:length(nn)) {
 
 lambda_lasso = matrix(, nrow = length(K), ncol = 3)
 lambda_lasso[,1] = K
-colnames(lambda_ridge) <- c("K", nn[1], nn[2])
+colnames(lambda_lasso) <- c("K", nn[1], nn[2])
+lambda_lasso_best <- c()
 
 for (k in 1:length(nn)) {
     for (i in 1:length(K)) {
+        fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, alpha=1, cv=TRUE)
+        lambda_lasso_best[k] = fit$lambda
+
         fit <- setLasso(x[nn[k]], x[,2:NCOL(x)], p=0, K=K[i], h=HH) # Lasso
         lambda_lasso[i,k+1] = fit$lambda
     }
@@ -151,7 +160,7 @@ for (k in 1:length(nn)) {
 
 months <- as.numeric(format(as.Date(X$Date), "%m"))
 
-ridge = matrix(, nrow = TT, ncol = 2 * length(IN))
+ridge = matrix(, nrow = TT, ncol = 2 * (length(IN) + 1))
 colnames(ridge) <- c(
                      paste(nn[1], "_ridge_IN0p1", sep=""), paste(nn[2], "_ridge_IN0p1", sep=""),
                      paste(nn[1], "_ridge_IN0p2", sep=""), paste(nn[2], "_ridge_IN0p2", sep=""),
@@ -161,10 +170,11 @@ colnames(ridge) <- c(
                      paste(nn[1], "_ridge_IN0p6", sep=""), paste(nn[2], "_ridge_IN0p6", sep=""),
                      paste(nn[1], "_ridge_IN0p7", sep=""), paste(nn[2], "_ridge_IN0p7", sep=""),
                      paste(nn[1], "_ridge_IN0p8", sep=""), paste(nn[2], "_ridge_IN0p8", sep=""),
-                     paste(nn[1], "_ridge_IN0p9", sep=""), paste(nn[2], "_ridge_IN0p9", sep="")
+                     paste(nn[1], "_ridge_IN0p9", sep=""), paste(nn[2], "_ridge_IN0p9", sep=""),
+                     paste(nn[1], "_ridge_cv", sep=""), paste(nn[2], "_ridge_cv", sep="")
                      )
 
-lasso = matrix(, nrow = TT, ncol = 2 * length(K))
+lasso = matrix(, nrow = TT, ncol = 2 * (length(K) + 1))
 colnames(lasso) <- c(
                      paste(nn[1], "_lasso_K1", sep=""), paste(nn[2], "_lasso_K1", sep=""),
                      paste(nn[1], "_lasso_K2", sep=""), paste(nn[2], "_lasso_K2", sep=""),
@@ -175,7 +185,8 @@ colnames(lasso) <- c(
                      paste(nn[1], "_lasso_K50", sep=""), paste(nn[2], "_lasso_K50", sep=""),
                      paste(nn[1], "_lasso_K60", sep=""), paste(nn[2], "_lasso_K60", sep=""),
                      paste(nn[1], "_lasso_K75", sep=""), paste(nn[2], "_lasso_K75", sep=""),
-                     paste(nn[1], "_lasso_K100", sep=""), paste(nn[2], "_lasso_K100", sep="")
+                     paste(nn[1], "_lasso_K100", sep=""), paste(nn[2], "_lasso_K100", sep=""),
+                     paste(nn[1], "_lasso_cv", sep=""), paste(nn[2], "_lasso_cv", sep="")
                      )
 
 pc = matrix(, nrow = TT, ncol = 2 * length(K))
@@ -227,12 +238,18 @@ for (j in start_sample:(TT-HH)) {
             fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_ridge[i,k+1], h=HH, alpha=0)
             ridge[j+HH,k+2*(i-1)] = fit$pred * const
         }
+        # with the best lambda from cross validation
+        fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_ridge_best[k], h=HH, alpha=0)
+        ridge[j+HH,k+2*length(IN)] = fit$pred * const
 
         # The lasso forecasts
         for (i in 1:length(K)) {
             fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_lasso[i,k+1], h=HH, alpha=1)
             lasso[j+HH,k+2*(i-1)] = fit$pred * const
         }
+        # with the best lambda from cross validation
+        fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_lasso_best[k], h=HH, alpha=1)
+        lasso[j+HH,k+2*length(K)] = fit$pred * const
 
         # The PC forecasts (the r in PC are going over the same values as the K in lasso)
         for (i in 1:length(K)) {
@@ -255,11 +272,11 @@ for (j in start_sample:(TT-HH)) {
 #######################################
 
 #data <- cbind(cbind(cbind(true, naive), ridge), lasso)[(start_sample+HH):NROW(dataset),]
-data <- cbind(cbind(cbind(cbind(true, naive), ridge), lasso), pc)[(start_sample+HH):NROW(dataset),]
-dates <- X[(start_sample+HH):NROW(dataset),1]
+data <- cbind(cbind(cbind(cbind(true, naive), ridge), lasso), pc)[(start_sample+HH):NROW(X),]
+dates <- X[(start_sample+HH):NROW(X),1]
 
 datawithdates <- cbind(dates, data)
 datawithdates$Date <- as.numeric(datawithdates$Date)
 
-save(data, dates, lambda_ridge, lambda_lasso, file="OutSample.Rda")
+save(data, dates, lambda_ridge, lambda_lasso, lambda_lasso_best, lambda_ridge_best, file="OutSample.Rda")
 write.csv(datawithdates, "OutSample.csv", row.names=FALSE)
