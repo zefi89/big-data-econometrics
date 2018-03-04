@@ -1,80 +1,6 @@
-########################################################################################################
-# Replications files for the paper:
-#
-# Forecasting using a large number of predictors:
-# is Bayesian regression a valid alternative to principal components?
-# Manuscript, ECARES-ULB, 2006
-#
-# Christine De Mol, Universite' Libre de Bruxelles and ECARES,
-# Domenico Giannone, Universite' Libre de Bruxelles and ECARES,
-# Lucrezia Reichlin, European Central Bank, ECARES and CEPR
-#
-# Programs and manuscript available at:
-# http://homepages.ulb.ac.be/~dgiannon/
-# http://homepages.ulb.ac.be/~lreichli/
-#
-########################################################################################################
-#
-# This file compares the forecating performances of alternative  forecasting methods for large cross-section
-# in a simulated out-of-sample exercise using the Stock and Watson (2002)'s  macroeconomic panel
-# of 131 monthly variables for the US economy for 1959 to 2002.
-#
-# The output of this program are statistics that compare the three methods.
-# 1) Factor model forecasts (Principal components Regression)
-# 2) Bayesian regression with i.i.d. normal prior (Ridge regression)
-# 3) Bayesian regression with i.i.d. Laplatan prior (LASSO regression)
-#
-# In this file we use the three main following functions:
-# PC_pred.m           Compute forecasts from Principal Components regression
-# RIDGE_pred.m        Compute forecasts from RIDGE Regression
-# LASSO_pred.m        Compute forecasts from LASSO Regression using the DDD thresholded Landweber iterative algorithm
-# LARS_pred.m         Compute forecasts from LASSO Regression using the LARS algorithm
-#
-# See also: SET_LASSO.m, SET_RIDGE.m for the setting of the prior (penalization) parameters in LASSO and RIDGE regression
-#           lars.m for the LARS algorithm (written by Karl Skoglund, IMM, DTU,)
-# Remark: this file produces results for a single parameterization of the forecasting models.
-#         Complete results for a grid of parameters (as in the paper) are produced by OutSample_complete.m
-#########################################################################################################
-message('----------------------------------------------------------------------------------------------------------------------------')
-
-message('replication files:')
-message(' ')
-message('Forecasting using a large number of predictors:')
-message('is Bayesian regression a valid alternative to principal components?')
-message('Manuscript, ECARES-ULB, 2006 ')
-message(' ')
-message('Christine De Mol, Universite Libre de Bruxelles and ECARES,')
-message('Domenico Giannone, Universite Libre de Bruxelles and ECARES')
-message('Lucrezia Reichlin, European Central Bank, ECARES and CEPR')
-message(' ')
-message('Programs and manuscript available at:')
-message('     http://homepages.ulb.ac.be/~dgiannon/ ')
-message('     http://homepages.ulb.ac.be/~lreichli/ ')
-message(' ')
-message('Remark: this file produecs results for a single parameterization of the forecasting models.')
-message('         Complete results for a grid of parameters (as in the paper) are produced by OutSample_complete.m')
-message(' ')
-message('See also: PC_pred.m, LASSO_pred.m, RIDGE_pred.m, SET_RIDGE.m, SET.LASSO.m, lars.m, OutSample_complete.m')
-message('----------------------------------------------------------------------------------------------------------------------------')
-
-#message(' ')
-#message(' ')
-#message('!!!WARNING!!!: the program computes forecasts for a range of parameters choice')
-#message('               RUNNING THE WHOLEe OUT-OF-SAMPLE EXERCISE TAKES ABOUT 15 MINUTES')
-#message('          ')
-#message('               Answering N below you can use the forecasts for the parameterizations of the paper (saved in OutSample_compete.mat)')
-#message('   ')
-#reply <- readline("    Run the whole forceasting exercise ? Y/N [N]: ")
-#message(' ')
-#message(' ')
-
-#stopifnot(reply == 'Y')
-
 library(readxl)
 
 source("Outliers.R")
-source("SetLasso.R")
-source("SetRidge.R")
 source("Predictors.R")
 
 ############
@@ -98,6 +24,11 @@ HH <- 12 # number of step ahead to forecast
 Jwind <- 120
 
 start_date <- '1970-01-01'  # Starting dates for the out-of-sample evaluation
+
+# Scan variable for ridge
+IN = c(0.1, 0.2, 0.3 ,0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+# Scan variable for PC and lasso
+K = c(1, 2, 3, 5, 10, 25, 50, 60, 75, 100)
 
 #####################################
 # Reading in data and transforming it
@@ -192,8 +123,6 @@ for (panel in setdiff(setdiff(names(x), nn), "Date")){
 # Find tuning parameter
 #######################
 
-IN = c(0.1, 0.2, 0.3 ,0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
-
 lambda_ridge = matrix(, nrow = length(IN), ncol = 3)
 lambda_ridge[,1] = IN
 colnames(lambda_ridge) <- c("IN", nn[1], nn[2])
@@ -204,8 +133,6 @@ for (k in 1:length(nn)) {
         lambda_ridge[i,k+1] = fit$lambda
     }
 }
-
-K = c(1, 2, 3, 5, 10, 25, 50, 60, 75, 100)
 
 lambda_lasso = matrix(, nrow = length(K), ncol = 3)
 lambda_lasso[,1] = K
@@ -271,6 +198,7 @@ true = matrix(, nrow = TT, ncol = 2)
 colnames(true) <- c(paste(nn[1], "_true", sep=""), paste(nn[2], "_true", sep=""))
 
 for (j in start_sample:(TT-HH)) {
+#for (j in start_sample:(start_sample + 10)) {
 
     # Displays the dates at the beginning of each year
     if (months[j] == 1) {
@@ -306,11 +234,11 @@ for (j in start_sample:(TT-HH)) {
             lasso[j+HH,k+2*(i-1)] = fit$pred * const
         }
 
-        ## The PC forecasts (the r in PC are going over the same values as the K in lasso)
-        #for (i in 1:length(K)) {
-            #pred <- pcPred(x[nn[k]], x[,2:NCOL(x)], p=0, r=K[i], h=HH)
-            #pc[j+HH,k+2*(i-1)] = pred * const
-        #}
+        # The PC forecasts (the r in PC are going over the same values as the K in lasso)
+        for (i in 1:length(K)) {
+            pred <- pcPred(x[nn[k]], x[,2:NCOL(x)], p=0, r=K[i], h=HH)
+            pc[j+HH,k+2*(i-1)] = pred * const
+        }
 
         # The random walk forecast
         naive[j+HH,k] = rwPred(x[nn[k]], h=HH) * const
@@ -326,12 +254,12 @@ for (j in start_sample:(TT-HH)) {
 # Save true values and forecasts to CSV
 #######################################
 
-data <- cbind(cbind(cbind(true, naive), ridge), lasso)[(start_sample+HH):NROW(dataset),]
-#data <- cbind(cbind(cbind(cbind(true, naive), ridge), lasso), pc)[(start_sample+HH):NROW(dataset),]
+#data <- cbind(cbind(cbind(true, naive), ridge), lasso)[(start_sample+HH):NROW(dataset),]
+data <- cbind(cbind(cbind(cbind(true, naive), ridge), lasso), pc)[(start_sample+HH):NROW(dataset),]
 dates <- X[(start_sample+HH):NROW(dataset),1]
 
 datawithdates <- cbind(dates, data)
 datawithdates$Date <- as.numeric(datawithdates$Date)
 
-save(dates, data, dates,file="OutSample.Rda")
+save(data, dates, lambda_ridge, lambda_lasso, file="OutSample.Rda")
 write.csv(datawithdates, "OutSample.csv", row.names=FALSE)

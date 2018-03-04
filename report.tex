@@ -1,0 +1,79 @@
+\documentclass[a4paper,11pt]{scrartcl}
+
+\usepackage{makecell}
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc} %-- pour utiliser des accents en français
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[round]{natbib}
+\usepackage{url}
+\usepackage{xspace}
+\usepackage[left=20mm,top=20mm]{geometry}
+\usepackage{algorithmic}
+\usepackage{subcaption}
+\usepackage{mathpazo}
+\usepackage{booktabs}
+\usepackage{hyperref}
+% \usepackage{draftwatermark}
+
+\newcommand{\ie}{ie}
+\newcommand{\eg}{eg}
+\newcommand{\reffig}[1]{Figure~\ref{#1}}
+\newcommand{\refsec}[1]{Section~\ref{#1}}
+
+\setcapindent{1em} %-- for captions of Figures
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+
+\title{Big Data and Machine Learning \\ Course Project}
+%\author{Jonas Rembser\\ \url{jonas.rembser@cern.ch} \\ Floriana Zefi\\ \url{florianagjzefi@gmail.com}}
+\author{Jonas Rembser\\Floriana Zefi}
+\date{\today}
+
+
+\begin{document}
+
+\maketitle
+
+%%%
+%
+\section{Introduction}
+
+Bacon ipsum dolour sit amet porchetta beef turkey, bacon turducken boudin hamburger venison ball tip. Brisket pork loin bresaola short loin ground round leberkas pastrami tongue jerky cow turducken beef ribs. Pork ribeye landjaeger prosciutto pig venison tenderloin. Swine beef ribs kielbasa, porchetta tenderloin salami venison pork belly tail.
+
+\begin{table}[ht]
+    \caption{Principal component forecasts}
+    \centering
+    \input{"tables/PC_IPS10_pretty.tex"}
+    \begin{center}
+    \input{"tables/PC_PUNEW_pretty.tex"}
+    \end{center}
+    \label{table:pc}
+\end{table}
+
+\begin{table}[ht]
+    \caption{Bayesian forecasts with Gaussian prior}
+    \centering
+    \input{"tables/RIDGE_IPS10_pretty.tex"}
+    \begin{center}
+    \input{"tables/RIDGE_PUNEW_pretty.tex"}
+    \end{center}
+    \label{table:ridge}
+\end{table}
+
+\begin{table}[ht]
+    \caption{Lasso forecasts}
+    \centering
+    \input{"tables/LASSO_IPS10_pretty.tex"}
+    \begin{center}
+    \input{"tables/LASSO_PUNEW_pretty.tex"}
+    \end{center}
+    \label{table:lasso}
+\end{table}
+
+
+%\bibliographystyle{plainnat}
+%\bibliography{/Users/hugo/references/references}
+
+\end{document}
