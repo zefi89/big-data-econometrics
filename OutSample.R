@@ -3,6 +3,9 @@ library(readxl)
 source("Outliers.R")
 source("Predictors.R")
 
+cv_plot_dir <- "plots_cv/"
+dir.create(file.path(cv_plot_dir), showWarnings = FALSE)
+
 ############
 # Parameters
 ############
@@ -127,31 +130,36 @@ lambda_ridge[,1] = IN
 colnames(lambda_ridge) <- c("IN", nn[1], nn[2])
 lambda_ridge_best <- c()
 
-for (k in 1:length(nn)) {
-    for (i in 1:length(IN)) {
-
-        fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, alpha=0, cv=TRUE)
-        lambda_ridge_best[k] = fit$lambda
-
-        fit <- setRidge(x[nn[k]], x[,2:NCOL(x)], p=0, INfit=IN[i], h=HH) # Ridge
-        lambda_ridge[i,k+1] = fit$lambda
-    }
-}
-
 lambda_lasso = matrix(, nrow = length(K), ncol = 3)
 lambda_lasso[,1] = K
 colnames(lambda_lasso) <- c("K", nn[1], nn[2])
 lambda_lasso_best <- c()
 
 for (k in 1:length(nn)) {
-    for (i in 1:length(K)) {
-        fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, alpha=1, cv=TRUE)
-        lambda_lasso_best[k] = fit$lambda
 
+    # Ridge
+    for (i in 1:length(IN)) {
+        fit <- setRidge(x[nn[k]], x[,2:NCOL(x)], p=0, INfit=IN[i], h=HH) # Ridge
+        lambda_ridge[i,k+1] = fit$lambda
+    }
+    # with cross validation
+    fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, alpha=0, cv=TRUE, cv_plot_file=paste(cv_plot_dir,paste(nn[k], '_ridge_cv.pdf', sep=""), sep=""))
+    lambda_ridge_best[k] = fit$lambda
+
+    # Lasso
+    for (i in 1:length(K)) {
         fit <- setLasso(x[nn[k]], x[,2:NCOL(x)], p=0, K=K[i], h=HH) # Lasso
         lambda_lasso[i,k+1] = fit$lambda
     }
+    # with cross validation
+    fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, alpha=1, cv=TRUE, cv_plot_file=paste(cv_plot_dir,paste(nn[k], '_lasso_cv.pdf', sep=""), sep=""))
+    lambda_lasso_best[k] = fit$lambda
+
+    # Regression tree (best pruning parameter is found for every prediction anyway, this is only for the cv plots)
+    rpartPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, cvplot=TRUE, cv_plot_file=paste(cv_plot_dir,paste(nn[k], '_tree_cv.pdf', sep=""), sep=""))
+    rpartPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, cvplot=TRUE, cv_plot_file=paste(cv_plot_dir,paste(nn[k], '_tree_cv.pdf', sep=""), sep=""))
 }
+
 
 #################################################
 # Performs the out-of-sample forecasting exercise
@@ -206,6 +214,10 @@ naive = matrix(, nrow = TT, ncol = 2)
 colnames(naive) <- c(paste(nn[1], "_rw", sep=""), paste(nn[2], "_rw", sep=""))
 true = matrix(, nrow = TT, ncol = 2)
 colnames(true) <- c(paste(nn[1], "_true", sep=""), paste(nn[2], "_true", sep=""))
+tree = matrix(, nrow = TT, ncol = 2)
+colnames(tree) <- c(paste(nn[1], "_tree", sep=""), paste(nn[2], "_tree", sep=""))
+forest = matrix(, nrow = TT, ncol = 2)
+colnames(forest) <- c(paste(nn[1], "_forest", sep=""), paste(nn[2], "_forest", sep=""))
 
 for (j in start_sample:(TT-HH)) {
 #for (j in start_sample:(start_sample + 10)) {
@@ -234,7 +246,11 @@ for (j in start_sample:(TT-HH)) {
     for (k in 1:length(nn)) {
         # Computed the ridge forecasts
         for (i in 1:length(IN)) {
-            fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_ridge[i,k+1], h=HH, alpha=0)
+            if (i == length(IN)) {
+                fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, cv=TRUE, h=HH, alpha=1)
+            } else {
+                fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_ridge[i,k+1], h=HH, alpha=0)
+            }
             ridge[j+HH,k+2*(i-1)] = fit$pred * const
         }
         # with the best lambda from cross validation
@@ -243,7 +259,11 @@ for (j in start_sample:(TT-HH)) {
 
         # The lasso forecasts
         for (i in 1:length(K)) {
-            fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_lasso[i,k+1], h=HH, alpha=1)
+            if (i == length(K)) {
+                fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, cv=TRUE, h=HH, alpha=1)
+            } else {
+                fit <- glmnetPred(x[nn[k]], x[,2:NCOL(x)], p=0, lambda=lambda_lasso[i,k+1], h=HH, alpha=1)
+            }
             lasso[j+HH,k+2*(i-1)] = fit$pred * const
         }
         # with the best lambda from cross validation
@@ -255,6 +275,12 @@ for (j in start_sample:(TT-HH)) {
             pred <- pcPred(x[nn[k]], x[,2:NCOL(x)], p=0, r=K[i], h=HH)
             pc[j+HH,k+2*(i-1)] = pred * const
         }
+
+        # Regression tree forecast
+        tree[j+HH,k] = rpartPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH) * const
+
+        # Random forest forecast
+        forest[j+HH,k] = rpartPred(x[nn[k]], x[,2:NCOL(x)], p=0, h=HH, random_forest=TRUE) * const
 
         # The random walk forecast
         naive[j+HH,k] = rwPred(x[nn[k]], h=HH) * const
@@ -270,8 +296,7 @@ for (j in start_sample:(TT-HH)) {
 # Save true values and forecasts to CSV
 #######################################
 
-#data <- cbind(cbind(cbind(true, naive), ridge), lasso)[(start_sample+HH):NROW(dataset),]
-data <- cbind(cbind(cbind(cbind(true, naive), ridge), lasso), pc)[(start_sample+HH):NROW(X),]
+data <- cbind(cbind(cbind(cbind(cbind(cbind(true, naive), ridge), lasso), pc), tree), forest)[(start_sample+HH):NROW(X),]
 dates <- X[(start_sample+HH):NROW(X),1]
 
 datawithdates <- cbind(dates, data)

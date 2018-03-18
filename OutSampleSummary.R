@@ -34,46 +34,44 @@ for (name in nn) {
     VAR_TRUE <- var(data[,ntrue])
 
     pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
-    #png(file.path(plot_dir, paste(cname, ".png", sep="")), width = 700, height = 500, units = "px")
     plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
     lines(as.Date(dates$Date), data[,cname], col="red")
-    title(main=paste("Forecasting", paste(name, paste("with Random walk"))))
+    #title(main=paste("Forecasting", paste(name, paste("with Random walk"))))
     dev.off()
 
     ###############################
     # Make the summary table for PC
     ###############################
 
-    REL_MSFE_PC = c()
-    REL_MSFE_PC_I = c()
-    REL_MSFE_PC_II = c()
-    REL_VAR_PC = c()
-    CORR_PC = c()
+    REL_MSFE = c()
+    REL_MSFE_I = c()
+    REL_MSFE_II = c()
+    REL_VAR = c()
+    CORR = c()
     for (i in 1:length(r)) {
         cname = paste(paste(name, "_pc_r", sep=""), r[i], sep="")
-        MSFE_PC <- mean((data[,ntrue]-data[,cname])^2)
-        REL_MSFE_PC[i] = MSFE_PC / MSFE_RW
+        MSFE <- mean((data[,ntrue]-data[,cname])^2)
+        REL_MSFE[i] = MSFE / MSFE_RW
 
-        MSFE_PC_I <- mean((data[1:(split_i-1),ntrue]-data[1:(split_i-1),cname])^2)
-        REL_MSFE_PC_I[i] = MSFE_PC_I / MSFE_RW_I
+        MSFE_I <- mean((data[1:(split_i-1),ntrue]-data[1:(split_i-1),cname])^2)
+        REL_MSFE_I[i] = MSFE_I / MSFE_RW_I
 
-        MSFE_PC_II <- mean((data[split_i:NROW(data),ntrue]-data[split_i:NROW(data),cname])^2)
-        REL_MSFE_PC_II[i] = MSFE_PC_II / MSFE_RW_II
+        MSFE_II <- mean((data[split_i:NROW(data),ntrue]-data[split_i:NROW(data),cname])^2)
+        REL_MSFE_II[i] = MSFE_II / MSFE_RW_II
 
-        REL_VAR_PC[i] = var(data[,cname]) / VAR_TRUE
+        REL_VAR[i] = var(data[,cname]) / VAR_TRUE
 
-        CORR_PC[i] = cor(data[,cname], data[,paste(name, "_pc_r5", sep="")])
+        CORR[i] = cor(data[,cname], data[,paste(name, "_pc_r5", sep="")])
 
         pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
-        #png(file.path(plot_dir, paste(cname, ".png", sep="")), width = 700, height = 500, units = "px")
         plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
         lines(as.Date(dates$Date), data[,cname], col="red")
-        title(main=paste("Forecasting", paste(name, paste("with Principal Components (r=", paste(r[i], ")", sep=""), sep=""))))
+        #title(main=paste("Forecasting", paste(name, paste("with Principal Components (r=", paste(r[i], ")", sep=""), sep=""))))
         dev.off()
 
     }
 
-    table <- data.frame(REL_MSFE_PC, REL_MSFE_PC_I, REL_MSFE_PC_II, REL_VAR_PC)
+    table <- data.frame(REL_MSFE, REL_MSFE_I, REL_MSFE_II, REL_VAR)
     colnames(table) <- c("MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance")
     rownames(table) <- r
     table = t(table)
@@ -86,39 +84,37 @@ for (name in nn) {
     # Make the summary table for Lasso
     ##################################
 
-    REL_MSFE_PC = c()
-    REL_MSFE_PC_I = c()
-    REL_MSFE_PC_II = c()
-    REL_VAR_PC = c()
-    CORR_PC = c()
+    REL_MSFE = c()
+    REL_MSFE_I = c()
+    REL_MSFE_II = c()
+    REL_VAR = c()
+    CORR = c()
     for (i in 1:length(Klabel)) {
         cname = paste(paste(name, "_lasso_", sep=""), Klabel[i], sep="")
-        print(cname)
-        MSFE_PC <- mean((data[,ntrue]-data[,cname])^2)
-        REL_MSFE_PC[i] = MSFE_PC / MSFE_RW
+        MSFE <- mean((data[,ntrue]-data[,cname])^2)
+        REL_MSFE[i] = MSFE / MSFE_RW
 
-        MSFE_PC_I <- mean((data[1:(split_i-1),ntrue]-data[1:(split_i-1),cname])^2)
-        REL_MSFE_PC_I[i] = MSFE_PC_I / MSFE_RW_I
+        MSFE_I <- mean((data[1:(split_i-1),ntrue]-data[1:(split_i-1),cname])^2)
+        REL_MSFE_I[i] = MSFE_I / MSFE_RW_I
 
-        MSFE_PC_II <- mean((data[split_i:NROW(data),ntrue]-data[split_i:NROW(data),cname])^2)
-        REL_MSFE_PC_II[i] = MSFE_PC_II / MSFE_RW_II
+        MSFE_II <- mean((data[split_i:NROW(data),ntrue]-data[split_i:NROW(data),cname])^2)
+        REL_MSFE_II[i] = MSFE_II / MSFE_RW_II
 
-        REL_VAR_PC[i] = var(data[,cname]) / VAR_TRUE
+        REL_VAR[i] = var(data[,cname]) / VAR_TRUE
 
-        CORR_PC[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
+        CORR[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
 
         pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
-        #png(file.path(plot_dir, paste(cname, ".png", sep="")), width = 700, height = 500, units = "px")
         plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
         lines(as.Date(dates$Date), data[,cname], col="red")
         #title(main=paste("Forecasting", paste(name, paste("with Lasso (K=", paste(K[i], ")", sep=""), sep=""))))
         dev.off()
     }
 
-    #table <- data.frame(lambda_lasso[,name], REL_MSFE_PC, REL_MSFE_PC_I, REL_MSFE_PC_II, REL_VAR_PC, CORR_PC)
-    #colnames(table) <- c("lambda", "MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=5)")
-    table <- data.frame(REL_MSFE_PC, REL_MSFE_PC_I, REL_MSFE_PC_II, REL_VAR_PC, CORR_PC)
-    colnames(table) <- c("MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=10)")
+    table <- data.frame(c(lambda_lasso[,name], lambda_lasso_best[k]), REL_MSFE, REL_MSFE_I, REL_MSFE_II, REL_VAR, CORR)
+    colnames(table) <- c("lambda", "MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=5)")
+    #table <- data.frame(REL_MSFE, REL_MSFE_I, REL_MSFE_II, REL_VAR, CORR)
+    #colnames(table) <- c("MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=10)")
     rownames(table) <- c(K, "cv")
     table = t(table)
 
@@ -130,41 +126,93 @@ for (name in nn) {
     # Make the summary table for Ridge
     ##################################
 
-    REL_MSFE_PC = c()
-    REL_MSFE_PC_I = c()
-    REL_MSFE_PC_II = c()
-    REL_VAR_PC = c()
-    CORR_PC = c()
+    REL_MSFE = c()
+    REL_MSFE_I = c()
+    REL_MSFE_II = c()
+    REL_VAR = c()
+    CORR = c()
     for (i in 1:length(INlabel)) {
         cname = paste(paste(name, "_ridge_", sep=""), INlabel[i], sep="")
-        MSFE_PC <- mean((data[,ntrue]-data[,cname])^2)
-        REL_MSFE_PC[i] = MSFE_PC / MSFE_RW
+        MSFE <- mean((data[,ntrue]-data[,cname])^2)
+        REL_MSFE[i] = MSFE / MSFE_RW
 
-        MSFE_PC_I <- mean((data[1:(split_i-1),ntrue]-data[1:(split_i-1),cname])^2)
-        REL_MSFE_PC_I[i] = MSFE_PC_I / MSFE_RW_I
+        MSFE_I <- mean((data[1:(split_i-1),ntrue]-data[1:(split_i-1),cname])^2)
+        REL_MSFE_I[i] = MSFE_I / MSFE_RW_I
 
-        MSFE_PC_II <- mean((data[split_i:NROW(data),ntrue]-data[split_i:NROW(data),cname])^2)
-        REL_MSFE_PC_II[i] = MSFE_PC_II / MSFE_RW_II
+        MSFE_II <- mean((data[split_i:NROW(data),ntrue]-data[split_i:NROW(data),cname])^2)
+        REL_MSFE_II[i] = MSFE_II / MSFE_RW_II
 
-        REL_VAR_PC[i] = var(data[,cname]) / VAR_TRUE
+        REL_VAR[i] = var(data[,cname]) / VAR_TRUE
 
-        CORR_PC[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
+        CORR[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
 
         pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
-        #png(file.path(plot_dir, paste(cname, ".png", sep="")), width = 700, height = 500, units = "px")
         plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
         lines(as.Date(dates$Date), data[,cname], col="red")
         #title(main=paste("Forecasting", paste(name, paste("with Ridge (Res.var.=", paste(IN[i], ")", sep=""), sep=""))))
         dev.off()
     }
 
-    print(c(lambda_ridge[,name], lambda_ridge_best[k]))
-    table <- data.frame(c(lambda_ridge[,name], lambda_ridge_best[k]), REL_MSFE_PC, REL_MSFE_PC_I, REL_MSFE_PC_II, REL_VAR_PC, CORR_PC)
+    table <- data.frame(c(lambda_ridge[,name], lambda_ridge_best[k]), REL_MSFE, REL_MSFE_I, REL_MSFE_II, REL_VAR, CORR)
     colnames(table) <- c("lambda", "MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=10)")
     rownames(table) <- c(IN, "cv")
     table = t(table)
 
     sink(paste(table_dir, paste(paste("/RIDGE_", name, sep=""), ".tex", sep=""), sep=""))
+    print(xtable(table))
+    sink()
+
+    ########################################
+    # Make the plots for the regression tree
+    ########################################
+
+    cname = paste(name, "_tree", sep="")
+
+    MSFE <- mean((data[,ntrue]-data[,cname])^2)
+    REL_MSFE = MSFE / MSFE_RW
+    MSFE_I <- mean((data[1:(split_i-1),ntrue]-data[1:(split_i-1),cname])^2)
+    REL_MSFE_I = MSFE_I / MSFE_RW_I
+    MSFE_II <- mean((data[split_i:NROW(data),ntrue]-data[split_i:NROW(data),cname])^2)
+    REL_MSFE_II = MSFE_II / MSFE_RW_II
+    REL_VAR = var(data[,cname]) / VAR_TRUE
+    CORR = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
+
+    tree_summary = c(REL_MSFE, REL_MSFE_I, REL_MSFE_II, REL_VAR, CORR)
+
+    pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
+    plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
+    lines(as.Date(dates$Date), data[,cname], col="red")
+    #title(main=paste("Forecasting", paste(name, "with Regression tree", sep="")))
+    dev.off()
+
+    ######################################
+    # Make the plots for the random forest
+    ######################################
+
+    cname = paste(name, "_forest", sep="")
+
+    MSFE <- mean((data[,ntrue]-data[,cname])^2)
+    REL_MSFE = MSFE / MSFE_RW
+    MSFE_I <- mean((data[1:(split_i-1),ntrue]-data[1:(split_i-1),cname])^2)
+    REL_MSFE_I = MSFE_I / MSFE_RW_I
+    MSFE_II <- mean((data[split_i:NROW(data),ntrue]-data[split_i:NROW(data),cname])^2)
+    REL_MSFE_II = MSFE_II / MSFE_RW_II
+    REL_VAR = var(data[,cname]) / VAR_TRUE
+    CORR = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
+
+    forest_summary = c(REL_MSFE, REL_MSFE_I, REL_MSFE_II, REL_VAR, CORR)
+
+    pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
+    plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
+    lines(as.Date(dates$Date), data[,cname], col="red")
+    #title(main=paste("Forecasting", paste(name, "with Regression tree", sep="")))
+    dev.off()
+
+    table <- data.frame(tree_summary, forest_summary)
+    rownames(table) <- c("MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=10)")
+    colnames(table) <- c("Decision tree", "Random forest")
+
+    sink(paste(table_dir, paste(paste("/TREE_FOREST_", name, sep=""), ".tex", sep=""), sep=""))
     print(xtable(table))
     sink()
 

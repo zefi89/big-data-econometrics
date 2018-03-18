@@ -11,6 +11,7 @@ replacements = [
         ("Correlation with PC forecasts (r=10)", "\hline\n  \makecell{Correlation with \\\\ PC forecasts (r=10)}"),
         ("rr}", "rr|}"),
         ("{r", "{|c|"),
+        ("cv", "CV"),
         ]
 
 todelete = [
@@ -39,6 +40,8 @@ for tf in table_files:
             descr = "In-sample Residual variance"
         elif "LASSO" in tf:
             descr = "Number of non-zero coefficients"
+        else:
+            descr = ""
         ncols = 0
 
         for i in range(len(data)):
@@ -53,7 +56,7 @@ for tf in table_files:
             if "lambda" in data[i]:
                 lambdas = data[i].split(" & ")[1:]
                 lambdas[-1] = lambdas[-1].split(" ")[0]
-                lambdas = ['{0:.1f}'.format(float(x)) for x in lambdas]
+                lambdas = ['{0:.2f}'.format(float(x)) for x in lambdas]
                 data[i] = "lambda & " + " & ".join(lambdas) + " \\\\"
                 data[i] = data[i] + "  \hline\n"
 

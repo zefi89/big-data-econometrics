@@ -1,11 +1,13 @@
 require(glmnet)
 require(signal)
+require(rpart)
+require(randomForest)
 
 ############################
 # Lasso or ridge with glmnet
 ############################
 
-glmnetPred <- function(y,x,p,lambda,h,alpha, cv=FALSE) {
+glmnetPred <- function(y,x,p,lambda,h,alpha, cv=FALSE, cv_plot_file='') {
 
     # Put togeteher predictors and their lags
     # X = [x x_{-1}... x_{-p}]
@@ -44,7 +46,18 @@ glmnetPred <- function(y,x,p,lambda,h,alpha, cv=FALSE) {
     # Do the fit
     #b <- solve(t(Z) %*% Z + lambda*diag(nc)) %*% t(Z) %*% y_std
     if (cv) {
-        cvout <- cv.glmnet(Z, y_std)
+        if (alpha == 0) {
+           lamseq <- exp(log(10)*seq(log10(0.01),log10(1000),by=0.005))
+        }
+        if (alpha == 1) {
+           lamseq <- exp(log(10)*seq(log10(0.01),log10(0.5),by=0.0005))
+        }
+        cvout <- cv.glmnet(Z, y_std, alpha=alpha, lambda=lamseq)
+        if (cv_plot_file != '') {
+            pdf(cv_plot_file)
+            plot(cvout, ylim=c(0.5,1.5))
+            dev.off()
+        }
         lambda = cvout$lambda.min
     }
     reg.mod <- glmnet(Z, y_std, alpha=alpha, family='gaussian', lambda=lambda, intercept=FALSE)
@@ -65,6 +78,76 @@ glmnetPred <- function(y,x,p,lambda,h,alpha, cv=FALSE) {
 
     return(returnlist)
 
+}
+
+#################
+# Regression Tree
+#################
+
+rpartPred <- function(y,x,p,h,cvplot=FALSE, cv_plot_file='plot.pdf', random_forest=FALSE) {
+
+    # Put togeteher predictors and their lags
+    # X = [x x_{-1}... x_{-p}]
+
+
+    for (j in 0:p) {
+        if (j == 0) {
+            temp <- x[(p+1):NROW(x),]
+        } else {
+            temp <- cbind(temp, x[(p+1-j):(NROW(x)-j),])
+        }
+    }
+    X <- temp
+    y <- y[(p+1):NROW(y),]
+
+
+    # Normalize the regressors to have |X|<1
+    nc <- NCOL(X)
+    nr <- NROW(X)
+    XX <- X
+    XX[,] = scale(X, center = TRUE, scale = TRUE)#/sqrt(nc*nr)
+    # Regressors used for computing the regression coefficients
+    Z <- XX[1:(NROW(XX)-h),]
+    Ztest <- XX[NROW(XX),]
+
+    # Compute the dependent variable to be predicted
+    # Y = (y_{+1}+...+y_{+h})/h
+    Y = filter(rep(1,h)/h,1,unlist(y))
+    Y = Y[(h+1):length(Y)]
+
+    # Standardize the dependent variable to have mean zero and unitary variance.
+    # (Mean and variance will be reattributed to the forecsats, see below)
+    my <- mean(Y)
+    sy <- sd(Y)
+    y_std <- (Y-my)/sy
+
+    Z$y_std <- y_std
+
+    if (random_forest) {
+        fit <- randomForest(y_std ~ .-y_std, data=Z)
+        pred <- predict(fit, Ztest, type="response")*sy+my
+    } else {
+
+        fit <- rpart(y_std ~ .-y_std, method="anova", data=Z)#, control=rpart.control(minsplit = 20))
+        pfit<- prune(fit, cp=fit$cptable[which.min(fit$cptable[,"xerror"]),"CP"])
+
+        #post(fit, file = "tree.ps")
+        #post(pfit, file = "tree_pruned.ps")
+
+        #print(pfit$cptable[,"xerror"])
+        #printcp(fit) # display the results
+        #summary(fit) # detailed summary of splits
+        if (cvplot) {
+            pdf(cv_plot_file)
+            plotcp(fit) # visualize cross-validation results
+            dev.off()
+        }
+
+        # Make the prediction
+        pred <- predict(pfit, Ztest, type="vector")*sy+my
+        }
+
+    return(pred)
 }
 
 #############
