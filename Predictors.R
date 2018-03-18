@@ -99,8 +99,8 @@ pcPred <- function(y,x,p,r,h) {
     X <- temp
     y <- y[(p+1):NROW(y),]
 
-    # Normalize the regressors to have |X|<1
-    XX <- scale(X, center = TRUE, scale = TRUE)#/sqrt(nc*nr)
+    # Centering is necessary for PRR
+    XX <- scale(X, center = TRUE, scale = TRUE)
     XX <- as.matrix(XX)
     # Compute the principal components on standardized predictors
     eigs = eigen(XX %*% t(XX), symmetric=TRUE)
@@ -114,7 +114,7 @@ pcPred <- function(y,x,p,r,h) {
     # Standardize the dependent variable to have mean zero and unitary variance.
     # (Mean and variance will be reattributed to the forecsats, see below)
     my <- mean(Y)
-    sy <- sd(Y)
+    sy <- 1.#sd(Y)
     y_std <- (Y-my)/sy
 
     # Compute the forecasts

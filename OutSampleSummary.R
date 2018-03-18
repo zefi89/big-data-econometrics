@@ -105,7 +105,7 @@ for (name in nn) {
 
         REL_VAR_PC[i] = var(data[,cname]) / VAR_TRUE
 
-        CORR_PC[i] = cor(data[,cname], data[,paste(name, "_pc_r5", sep="")])
+        CORR_PC[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
 
         pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
         #png(file.path(plot_dir, paste(cname, ".png", sep="")), width = 700, height = 500, units = "px")
@@ -118,7 +118,7 @@ for (name in nn) {
     #table <- data.frame(lambda_lasso[,name], REL_MSFE_PC, REL_MSFE_PC_I, REL_MSFE_PC_II, REL_VAR_PC, CORR_PC)
     #colnames(table) <- c("lambda", "MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=5)")
     table <- data.frame(REL_MSFE_PC, REL_MSFE_PC_I, REL_MSFE_PC_II, REL_VAR_PC, CORR_PC)
-    colnames(table) <- c("MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=5)")
+    colnames(table) <- c("MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=10)")
     rownames(table) <- c(K, "cv")
     table = t(table)
 
@@ -148,7 +148,7 @@ for (name in nn) {
 
         REL_VAR_PC[i] = var(data[,cname]) / VAR_TRUE
 
-        CORR_PC[i] = cor(data[,cname], data[,paste(name, "_pc_r5", sep="")])
+        CORR_PC[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
 
         pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
         #png(file.path(plot_dir, paste(cname, ".png", sep="")), width = 700, height = 500, units = "px")
@@ -160,7 +160,7 @@ for (name in nn) {
 
     print(c(lambda_ridge[,name], lambda_ridge_best[k]))
     table <- data.frame(c(lambda_ridge[,name], lambda_ridge_best[k]), REL_MSFE_PC, REL_MSFE_PC_I, REL_MSFE_PC_II, REL_VAR_PC, CORR_PC)
-    colnames(table) <- c("lambda", "MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=5)")
+    colnames(table) <- c("lambda", "MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=10)")
     rownames(table) <- c(IN, "cv")
     table = t(table)
 

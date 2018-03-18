@@ -60,7 +60,7 @@ colnames(transf)[1] <- "Transformation"
 
 X <- data[14:NROW(data),]
 
-#0: variable not to included;
+# 0: variable not to included
 # 1: no transformation
 # 2: (1-L)
 # 4: log * 100
@@ -89,9 +89,8 @@ for (ti in c(0,1,2,3,4,5,6)){
   }
   # (1-L) * (1-L^{12}) * log * 100 (Prices)
   if (ti == 6) {
-    X[labels] <- 100 * (log(X[labels]) - log(data[2:(NROW(data)-12),labels]))
-               - 100 * (log(data[13:(NROW(data)-1),labels]) - log(data[1:(NROW(data)-13),labels]))
-    data[labels] <- lapply(data[labels], as.numeric)
+    X[labels] <- 100 * (log(X[labels]) - log(data[2:(NROW(data)-12),labels])) -
+                 100 * (log(data[13:(NROW(data)-1),labels]) - log(data[1:(NROW(data)-13),labels]))
   }
 }
 
