@@ -46,17 +46,19 @@ glmnetPred <- function(y,x,p,lambda,h,alpha, cv=FALSE, cv_plot_file='') {
     # Do the fit
     #b <- solve(t(Z) %*% Z + lambda*diag(nc)) %*% t(Z) %*% y_std
     if (cv) {
-        if (alpha == 0) {
-           lamseq <- exp(log(10)*seq(log10(0.01),log10(1000),by=0.005))
-        }
-        if (alpha == 1) {
-           lamseq <- exp(log(10)*seq(log10(0.01),log10(0.5),by=0.0005))
-        }
-        cvout <- cv.glmnet(Z, y_std, alpha=alpha, lambda=lamseq)
         if (cv_plot_file != '') {
+            if (alpha == 0) {
+               lamseq <- exp(log(10)*seq(log10(0.01),log10(1000),by=0.005))
+            }
+            if (alpha == 1) {
+               lamseq <- exp(log(10)*seq(log10(0.01),log10(0.5),by=0.0005))
+            }
+            cvout <- cv.glmnet(Z, y_std, alpha=alpha, lambda=lamseq)
             pdf(cv_plot_file)
             plot(cvout, ylim=c(0.5,1.5))
             dev.off()
+        } else {
+            cvout <- cv.glmnet(Z, y_std, alpha=alpha)
         }
         lambda = cvout$lambda.min
     }

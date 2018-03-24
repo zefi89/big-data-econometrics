@@ -9,6 +9,8 @@ replacements = [
         ("lambda", "$\lambda$"),
         ("Correlation with PC forecasts (r=5)", "\hline\n  \makecell{Correlation with \\\\ PC forecasts (r=5)}"),
         ("Correlation with PC forecasts (r=10)", "\hline\n  \makecell{Correlation with \\\\ PC forecasts (r=10)}"),
+        ("Decision tree", "\makecell{Decision \\\\ tree}"),
+        ("Random forest", "\makecell{Random \\\\ forest}"),
         ("rr}", "rr|}"),
         ("{r", "{|c|"),
         ("cv", "CV"),

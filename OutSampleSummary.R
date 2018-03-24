@@ -61,7 +61,11 @@ for (name in nn) {
 
         REL_VAR[i] = var(data[,cname]) / VAR_TRUE
 
-        CORR[i] = cor(data[,cname], data[,paste(name, "_pc_r5", sep="")])
+        CORR[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
+
+        if (cname == paste(name, "_pc_r10", sep="")) {
+            pc_summary = c(REL_MSFE[i], REL_MSFE_I[i], REL_MSFE_II[i], REL_VAR[i], CORR[i])
+        }
 
         pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
         plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
@@ -104,6 +108,10 @@ for (name in nn) {
 
         CORR[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
 
+        if (i == length(Klabel)) {
+            lasso_summary = c(REL_MSFE[i], REL_MSFE_I[i], REL_MSFE_II[i], REL_VAR[i], CORR[i])
+        }
+
         pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
         plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
         lines(as.Date(dates$Date), data[,cname], col="red")
@@ -145,6 +153,10 @@ for (name in nn) {
         REL_VAR[i] = var(data[,cname]) / VAR_TRUE
 
         CORR[i] = cor(data[,cname], data[,paste(name, "_pc_r10", sep="")])
+
+        if (i == length(INlabel)) {
+            ridge_summary = c(REL_MSFE[i], REL_MSFE_I[i], REL_MSFE_II[i], REL_VAR[i], CORR[i])
+        }
 
         pdf(file.path(plot_dir, paste(cname, ".pdf", sep="")), width=7, height=5)
         plot(as.Date(dates$Date), data[,ntrue], type='l', xlab="", ylab=paste("transformed", name))
@@ -208,9 +220,9 @@ for (name in nn) {
     #title(main=paste("Forecasting", paste(name, "with Regression tree", sep="")))
     dev.off()
 
-    table <- data.frame(tree_summary, forest_summary)
+    table <- data.frame(pc_summary, ridge_summary, lasso_summary, tree_summary, forest_summary)
     rownames(table) <- c("MFSE 1971 - 2002", "MFSE 1971 - 1984", "MFSE 1985 - 2002", "Variance", "Correlation with PC forecasts (r=10)")
-    colnames(table) <- c("Decision tree", "Random forest")
+    colnames(table) <- c("PC=10", "Ridge", "Lasso", "Decision tree", "Random forest")
 
     sink(paste(table_dir, paste(paste("/TREE_FOREST_", name, sep=""), ".tex", sep=""), sep=""))
     print(xtable(table))

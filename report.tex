@@ -28,7 +28,8 @@
 
 \title{Big Data and Machine Learning \\ Course Project}
 %\author{Jonas Rembser\\ \url{jonas.rembser@cern.ch} \\ Floriana Zefi\\ \url{florianagjzefi@gmail.com}}
-\author{Jonas Rembser\\Floriana Zefi}
+%\author{Jonas Rembser\\Floriana Zefi}
+\author{Jonas Rembser}
 \date{\today}
 
 
@@ -73,15 +74,90 @@ Bacon ipsum dolour sit amet porchetta beef turkey, bacon turducken boudin hambur
 \end{table}
 
 \begin{table}[ht]
-    \caption{Wood forecasts}
+    \caption{Forecast summary}
     \centering
     \input{"tables/TREE_FOREST_IPS10_pretty.tex"}
     \begin{center}
     \input{"tables/TREE_FOREST_PUNEW_pretty.tex"}
     \end{center}
-    \label{table:wood}
+    \label{table:all}
 \end{table}
 
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/IPS10_rw-crop.pdf}
+        \caption{Random walk.}
+        \label{fig:IPS10_rw}
+    \end{subfigure} ~
+    \vspace{0.7cm}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/IPS10_pc_r10-crop.pdf}
+        \caption{Principal component regression (PC=10).}
+        \label{fig:IPS10_pc}
+    \end{subfigure}
+    \vspace{0.7cm}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/IPS10_ridge_cv-crop.pdf}
+        \caption{Ridge with cross-validation.}
+        \label{fig:IPS10_ridge}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/IPS10_lasso_cv-crop.pdf}
+        \caption{Lasso with cross-validation.}
+        \label{fig:IPS10_lasso}
+    \end{subfigure} ~
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/IPS10_tree-crop.pdf}
+        \caption{Pruned decision tree.}
+        \label{fig:IPS10_tree}
+    \end{subfigure} ~
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/IPS10_forest-crop.pdf}
+        \caption{Random forest.}
+        \label{fig:IPS10_forest}
+    \end{subfigure}
+    \caption{Industiral Production forecasts.}
+    \label{fig:IPS10}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/PUNEW_rw-crop.pdf}
+        \caption{Random walk.}
+        \label{fig:PUNEW_rw}
+    \end{subfigure} ~
+    \vspace{0.7cm}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/PUNEW_pc_r10-crop.pdf}
+        \caption{Principal component regression (PC=10).}
+        \label{fig:PUNEW_pc}
+    \end{subfigure}
+    \vspace{0.7cm}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/PUNEW_ridge_cv-crop.pdf}
+        \caption{Ridge with cross-validation.}
+        \label{fig:PUNEW_ridge}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/PUNEW_lasso_cv-crop.pdf}
+        \caption{Lasso with cross-validation.}
+        \label{fig:PUNEW_lasso}
+    \end{subfigure} ~
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/PUNEW_tree-crop.pdf}
+        \caption{Pruned decision tree.}
+        \label{fig:PUNEW_tree}
+    \end{subfigure} ~
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{plots/PUNEW_forest-crop.pdf}
+        \caption{Random forest.}
+        \label{fig:PUNEW_forest}
+    \end{subfigure}
+    \caption{Consumer Price Index forecasts.}
+    \label{fig:PUNEW}
+\end{figure}
 
 %\bibliographystyle{plainnat}
 %\bibliography{/Users/hugo/references/references}
